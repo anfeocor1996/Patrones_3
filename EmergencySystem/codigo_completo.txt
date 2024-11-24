@@ -1,0 +1,258 @@
+=== SISTEMA DE EMERGENCIAS === 
+ 
+=== PACKAGE OBSERVER === 
+package observer;
+
+public class Emergency {
+    private String type;
+    private String location;
+    private int severity;
+
+    public Emergency(String type, String location, int severity) {
+        this.type = type;
+        this.location = location;
+        this.severity = severity;
+    }
+
+    // Getters
+    public String getType() { return type; }
+    public String getLocation() { return location; }
+    public int getSeverity() { return severity; }
+}package observer;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class EmergencyMonitoringSystem {
+    private List<EmergencyObserver> observers = new ArrayList<>();
+    
+    public void attach(EmergencyObserver observer) {
+        observers.add(observer);
+    }
+    
+    public void detach(EmergencyObserver observer) {
+        observers.remove(observer);
+    }
+    
+    public void notifyEmergency(Emergency emergency) {
+        for (EmergencyObserver observer : observers) {
+            observer.update(emergency);
+        }
+    }
+}
+package observer;
+
+public interface EmergencyObserver {
+    void update(Emergency emergency);
+}package observer;
+
+public class FireDepartment implements EmergencyObserver {
+    @Override
+    public void update(Emergency emergency) {
+        if (emergency.getType().equals("FIRE")) {
+            System.out.println("Bomberos despachados a " + emergency.getLocation() +
+                             " - Severidad: " + emergency.getSeverity());
+        }
+    }
+}
+package observer;
+
+public class PoliceStation implements EmergencyObserver {
+    @Override
+    public void update(Emergency emergency) {
+        System.out.println("Policía notificada de emergencia en " + emergency.getLocation() +
+                         " - Tipo: " + emergency.getType());
+    }
+} 
+=== PACKAGE STRATEGY === 
+package strategy;
+
+import observer.Emergency;
+
+public interface EmergencyResponseStrategy {
+    void executeResponse(Emergency emergency);
+}
+package strategy;
+
+import observer.Emergency;
+
+public class EmergencyResponseSystem {
+    private EmergencyResponseStrategy strategy;
+    
+    public void setStrategy(EmergencyResponseStrategy strategy) {
+        this.strategy = strategy;
+    }
+    
+    public void handleEmergency(Emergency emergency) {
+        strategy.executeResponse(emergency);
+    }
+}
+package strategy;
+
+import observer.Emergency;
+
+public class FireEmergencyStrategy implements EmergencyResponseStrategy {
+    @Override
+    public void executeResponse(Emergency emergency) {
+        System.out.println("Ejecutando protocolo de incendios:");
+        System.out.println("1. Despachar unidades de bomberos");
+        System.out.println("2. Evacuar área circundante");
+        System.out.println("3. Cortar suministro de gas en la zona");
+    }
+}
+package strategy;
+
+import observer.Emergency;
+
+public class MedicalEmergencyStrategy implements EmergencyResponseStrategy {
+    @Override
+    public void executeResponse(Emergency emergency) {
+        System.out.println("Ejecutando protocolo médico:");
+        System.out.println("1. Despachar ambulancias");
+        System.out.println("2. Alertar hospitales cercanos");
+        System.out.println("3. Establecer corredor de emergencia");
+    }
+} 
+=== PACKAGE STATE === 
+package state;
+
+public class DetectedState implements EmergencyState {
+    @Override
+    public void evaluate(EmergencyContext context) {
+        System.out.println("Iniciando evaluación de la emergencia tipo: " + 
+                         context.getEmergency().getType());
+        context.setState(new EvaluationState());
+    }
+    
+    @Override
+    public void respond(EmergencyContext context) {
+        System.out.println("Error: Debe evaluarse primero la emergencia en " + 
+                         context.getEmergency().getLocation());
+    }
+    
+    @Override
+    public void resolve(EmergencyContext context) {
+        System.out.println("Error: No se puede resolver una emergencia no evaluada. Severidad: " + 
+                         context.getEmergency().getSeverity());
+    }
+    
+    @Override
+    public String getStateName() {
+        return "Detectada";
+    }
+}package state;
+
+import observer.Emergency;
+
+public class EmergencyContext {
+    private EmergencyState currentState;
+    private Emergency emergency;
+
+    public EmergencyContext(Emergency emergency) {
+        this.emergency = emergency;
+        this.currentState = new DetectedState();
+    }
+
+    public void setState(EmergencyState state) {
+        this.currentState = state;
+    }
+
+    public void evaluate() {
+        currentState.evaluate(this);
+        // Usar el campo emergency
+        System.out.println("Evaluando emergencia tipo: " + emergency.getType() + 
+                         " en ubicación: " + emergency.getLocation());
+    }
+
+    public void respond() {
+        currentState.respond(this);
+        // Usar el campo emergency
+        System.out.println("Respondiendo a emergencia con severidad: " + 
+                         emergency.getSeverity());
+    }
+
+    public void resolve() {
+        currentState.resolve(this);
+        // Usar el campo emergency
+        System.out.println("Resolviendo emergencia en: " + emergency.getLocation());
+    }
+
+    public String getCurrentState() {
+        return currentState.getStateName();
+    }
+
+    // Getter para emergency
+    public Emergency getEmergency() {
+        return emergency;
+    }
+}package state;
+
+public interface EmergencyState {
+    void evaluate(EmergencyContext context);
+    void respond(EmergencyContext context);
+    void resolve(EmergencyContext context);
+    String getStateName();
+}package state;
+
+public class EvaluationState implements EmergencyState {
+    @Override
+    public void evaluate(EmergencyContext context) {
+        System.out.println("La emergencia tipo " + context.getEmergency().getType() + 
+                         " ya está en evaluación");
+    }
+    
+    @Override
+    public void respond(EmergencyContext context) {
+        System.out.println("Iniciando respuesta a emergencia con severidad " + 
+                         context.getEmergency().getSeverity());
+    }
+    
+    @Override
+    public void resolve(EmergencyContext context) {
+        System.out.println("Resolviendo emergencia en " + context.getEmergency().getLocation());
+    }
+    
+    @Override
+    public String getStateName() {
+        return "En Evaluación";
+    }
+} 
+=== PACKAGE MAIN === 
+package main;
+
+import observer.*;
+import strategy.*;
+import state.*;
+
+public class Main {
+    public static void main(String[] args) {
+        // Crear sistema de monitoreo
+        EmergencyMonitoringSystem monitoringSystem = new EmergencyMonitoringSystem();
+        
+        // Registrar observadores
+        monitoringSystem.attach(new FireDepartment());
+        monitoringSystem.attach(new PoliceStation());
+        
+        // Crear emergencia
+        Emergency fireEmergency = new Emergency("FIRE", "Calle Principal 123", 4);
+        
+        // Notificar emergencia
+        System.out.println("=== Demostración del Patrón Observer ===");
+        monitoringSystem.notifyEmergency(fireEmergency);
+        
+        // Demostrar estrategia
+        System.out.println("\n=== Demostración del Patrón Strategy ===");
+        EmergencyResponseSystem responseSystem = new EmergencyResponseSystem();
+        responseSystem.setStrategy(new FireEmergencyStrategy());
+        responseSystem.handleEmergency(fireEmergency);
+        
+        // Demostrar estados
+        System.out.println("\n=== Demostración del Patrón State ===");
+        EmergencyContext context = new EmergencyContext(fireEmergency);
+        System.out.println("Estado actual: " + context.getCurrentState());
+        context.evaluate();
+        System.out.println("Estado actual: " + context.getCurrentState());
+        context.respond();
+        System.out.println("Estado actual: " + context.getCurrentState());
+    }
+}
